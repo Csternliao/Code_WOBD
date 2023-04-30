@@ -8,14 +8,15 @@ CONVER_EPOCH = 10
 
 # 环境参数
 SEED = 666
-N = 60  # 设备数 10的倍数
+N = 40  # 设备数 10的倍数
 M = 4  # AP数
+MD_GROUP_RATIO = [6, 4]
 # 下面两者相加应等于M
 NUM_AP_OF_GROUP1 = M / 2
 NUM_AP_OF_GROUP2 = M / 2
 # 下面两者相加应等于N
-NUM_MD_OF_GROUP1 = N * 4 / 10
-NUM_MD_OF_GROUP2 = N * 6 / 10
+NUM_MD_OF_GROUP1 = N * MD_GROUP_RATIO[0] / sum(MD_GROUP_RATIO)
+NUM_MD_OF_GROUP2 = N * MD_GROUP_RATIO[1] / sum(MD_GROUP_RATIO)
 MAX_EPOCHES = 500   # 最大迭代数
 
 # 环境参数
@@ -45,6 +46,10 @@ INPUT_SIZE_MIN = 0.2
 INPUT_SIZE_MAX = 4
 CP_MIN = 1  # 每单位任务大小需要CPU多少转
 CP_MAX = 5
+
+# FIX!!!
+MAX_DEVICES = 80
+MAX_APS = 12
 
 # 实验设置
 # balance   均衡性实验

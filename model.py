@@ -12,7 +12,7 @@ from config import *
 
 class Device(object):
 
-    def __init__(self, id, loc: list[int], f_c, f_p, task: list[int], group) -> None:
+    def __init__(self, id, loc: list[int], f_c=None, f_p=None, task: list[int]=None, group=None) -> None:
         self.id = id
         self.loc = loc  # location [x, y]
         self.f_c = f_c  # cpu frequency
@@ -45,7 +45,7 @@ class Device(object):
 
 class AP(object):
 
-    def __init__(self, id, total_b, total_f, loc, group) -> None:
+    def __init__(self, id, total_b=None, total_f=None, loc=None, group=None) -> None:
         self.id = id
         self.loc = loc  # location (x, y)
         self.total_b = total_b
