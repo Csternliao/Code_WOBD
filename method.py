@@ -48,10 +48,9 @@ class DeviceAgent(object):
 # WoLFPHC: Subclass of DeviceAgent
 class WoLFPHC(DeviceAgent):
 
-    def __init__(self, M, access_aps, lamda, theta, s_delta_win, s_delta_loss):
+    def __init__(self, M, access_aps, theta, s_delta_win, s_delta_loss):
         super().__init__(M, access_aps)
         self.Q = [0 for _ in range(self.M+1)]
-        self.lamda = lamda    # Equ 12 0.1
         self.theta = theta    # Equ 13 0.1
         self.s_delta = 0
         self.s_delta_win, self.s_delta_loss = s_delta_win, s_delta_loss
@@ -75,13 +74,14 @@ class WoLFPHC(DeviceAgent):
     def update_avg_policy(self):
         for m in range(self.M + 1):
             if m in self.off_real_space:
-                self.avg_policy[m] += 1 / self.game_history[m] * \
+                self.avg_policy[m] += 1 / (self.game_history[m]) * \
                     (self.policy[m] - self.avg_policy[m])
 
     def update_policy(self, offload_decision, total_delay):
 
         # 更新Q值
-        self.Q[offload_decision] = (1-self.theta) * self.Q[offload_decision] + self.theta * (1 / total_delay)
+        self.Q[offload_decision] = (
+            1-self.theta) * self.Q[offload_decision] + self.theta * (1 / total_delay)
 
         # 计算平均策略期望值
         def func(x, y): return x*y
@@ -94,7 +94,7 @@ class WoLFPHC(DeviceAgent):
         sum_current_value = sum(list_result_c)
 
         # 比较平均策略和当前策略
-        if sum_ave_value < sum_current_value:
+        if sum_ave_value <= sum_current_value:
             # 用小参数s_delta_win
             self.s_delta = self.s_delta_win
         else:
@@ -132,7 +132,8 @@ class QLearningAgent(DeviceAgent):
 
     def update_policy(self, offload_decision, total_latency):
         # print(math.exp(device_Q_value[i][0]/lamda[i]))'
-        self.Q[offload_decision] = (1-self.theta)*self.Q[offload_decision]+self.theta*(1/total_latency)
+        self.Q[offload_decision] = (
+            1-self.theta)*self.Q[offload_decision]+self.theta*(1/total_latency)
         sum_Q_lamda = 0
         self.policy.clear()
         # self.policy.append(0)
@@ -160,6 +161,7 @@ class QLearningAgent(DeviceAgent):
             #     self.first = False
             # else:
             #     off_decision = np.argmax(self.Q)
+            #     print(off_decision)
             if random.random() < self.epsilon:
                 off_decision = random.choice(self.off_real_space)
             else:

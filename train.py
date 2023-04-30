@@ -11,7 +11,7 @@ def set_agent(env, method_name, config):
     # --------- 方法配置 ---------- #
     if method_name == 'WoLF':
         for device in env.devices:
-            agent = WoLFPHC(env.M, device.access_aps, lamda=config['lamda'], theta=config['theta'],
+            agent = WoLFPHC(env.M, device.access_aps, theta=config['theta'],
                             s_delta_win=config['s_delta_win'], s_delta_loss=config['s_delta_loss'])
             device.link_agent(agent)
         dispatch_agent = DispatchAgent(M=env.M, env=env, is_dispatch=True)
@@ -23,7 +23,7 @@ def set_agent(env, method_name, config):
         dispatch_agent = DispatchAgent(M=env.M, env=env, is_dispatch=True)
     elif method_name == 'DO':
         for device in env.devices:
-            agent = WoLFPHC(env.M, device.access_aps, lamda=config['lamda'], theta=config['theta'],
+            agent = WoLFPHC(env.M, device.access_aps, theta=config['theta'],
                             s_delta_win=config['s_delta_win'], s_delta_loss=config['s_delta_loss'])
             # agent = QLearningAgent(env.M, device.access_aps, lamda=config['lamda'], theta=config['theta'],
             #                        mode='mix')
@@ -37,9 +37,9 @@ def set_agent(env, method_name, config):
     elif method_name == 'GO':
         for device in env.devices:
             agent = QLearningAgent(env.M, device.access_aps, lamda=config['lamda'], theta=config['theta'],
-                                   mode='greedy')
+                                   mode='mix')
             device.link_agent(agent)
-        dispatch_agent = DispatchAgent(M=env.M, env=env, is_dispatch=True)
+        dispatch_agent = DispatchAgent(M=env.M, env=env, is_dispatch=False)
     elif method_name == 'WoLF_Con':  # 收敛性实验
         for device in env.devices:
             agent = WoLFPHC(env.M, device.access_aps, lamda=config['lamda'], theta=config['theta'],
