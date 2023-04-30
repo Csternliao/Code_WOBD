@@ -152,17 +152,15 @@ def draw_delay_ap_result(ex_config, file_name, data=None):
         data = []
         with open(file=file_name, mode='r') as f:
             for line in f.readlines():
-                print(line)
-                data.append(line.strip().split('\t'))
-    print(data)
+                data.append([float(i) for i in line.strip().split('\t')])
     for idx in range(len(data)):
         plt.plot(ex_config['M'], data[idx], color=ex_config['colors'][idx],
-                 marker=ex_config['markers'][idx], label=ex_config['methods'][idx])
+                 marker=ex_config['markers'][idx], linestyle=ex_config['linestyles'][idx], label=ex_config['methods'][idx])
     # [TODO]标签待确认
     plt.xlabel('Number of APs')
     plt.ylabel('Total delay')
     plt.legend()
-    plt.savefig('./figs/delay_ap_result.png', dpi=500)
+    plt.savefig('./figs/delay_ap_result_MD%d.png' % N, dpi=500)
     plt.show()
 
 
@@ -175,4 +173,4 @@ if __name__ == "__main__":
         get_balance_result(ex_config)
     if ex_name == 'delay_ap':
         # draw_delay_ap_result(ex_config, file_name='./data/delay_ap_result.txt')
-        get_delay_ap_result(ex_config, file_name='./data/delay_ap_result.txt')
+        get_delay_ap_result(ex_config, file_name='./data/delay_ap_result%d.txt' % N)

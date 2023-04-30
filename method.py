@@ -94,7 +94,7 @@ class WoLFPHC(DeviceAgent):
         sum_current_value = sum(list_result_c)
 
         # 比较平均策略和当前策略
-        if sum_ave_value <= sum_current_value:
+        if sum_ave_value < sum_current_value:
             # 用小参数s_delta_win
             self.s_delta = self.s_delta_win
         else:

@@ -7,15 +7,15 @@ CONVER_DIFF = 0.05
 CONVER_EPOCH = 10
 
 # 环境参数
-SEED = 0
-N = 40  # 设备数
+SEED = 666
+N = 60  # 设备数 10的倍数
 M = 4  # AP数
 # 下面两者相加应等于M
 NUM_AP_OF_GROUP1 = M / 2
 NUM_AP_OF_GROUP2 = M / 2
 # 下面两者相加应等于N
-NUM_MD_OF_GROUP1 = N * 3 / 8
-NUM_MD_OF_GROUP2 = N * 5 / 8
+NUM_MD_OF_GROUP1 = N * 4 / 10
+NUM_MD_OF_GROUP2 = N * 6 / 10
 MAX_EPOCHES = 500   # 最大迭代数
 
 # 环境参数
@@ -34,8 +34,8 @@ F_P_MAX = 0.15
 NUM_ACCESS_APS = 2
 
 # AP参数
-GROUP1_F = 50
-GROUP2_F = 30
+GROUP1_F = 60
+GROUP2_F = 40
 B_MIN = 5
 B_MAX = 40
 
@@ -77,7 +77,7 @@ EX_CONFIG = {
         'methods': ['WoLF', 'Q-value', 'GO', 'DO', 'RO'],
         'method_config': METHOD_CONFIG,
         'colors': ['b', 'orange', 'g', 'r', 'm'],
-        'linestyles': ['-', '.', '--', '-.', '-'],
+        'linestyles': ['-', ':', '--', '-.', '-'],
         'markers': ['o', '^', 'P', '*', 's'],
         'M': [4, 6, 8, 10, 12]
     },
