@@ -15,6 +15,7 @@ class DeviceAgent(object):
         self.policy = self.get_init_policy()
         self.off_decision_space, self.off_real_space = self.get_off_space()
         self.off_decision = 0
+        self.policy_history = [self.policy]
 
     def get_init_policy(self):
         num_access_aps = len(self.access_aps)
@@ -72,56 +73,15 @@ class WoLFPHC(DeviceAgent):
         return off_decision
 
     def update_avg_policy(self):
-        # print(math.exp(device_Q_value[i][m+1]/lamda[i]))
-        sum_Q_lamda = math.exp(self.Q[0] / self.lamda)
-        sum_policy = 0.0
-        self.avg_policy.clear()
-        self.avg_policy.append(0)
-        for m in range(self.M):
-            # print(math.exp(device_Q_value[i][m+1]/lamda[i]))
-            # try:
-            #     tmp = math.exp(self.Q[m+1] / self.lamda)
-            # except OverflowError:
-            #     tmp = float('inf')
-            tmp = math.exp(self.Q[m+1] / self.lamda)
-            sum_Q_lamda = sum_Q_lamda + tmp
-        # print("sum_Q_lamda[",i+M,"]",sum_Q_lamda[i])
-        for m in range(self.M):
-            if m in self.access_aps:
-                # try:
-                #     x = (math.exp(self.Q[m+1] / self.lamda)) / sum_Q_lamda
-                # except:
-                #     x = float('inf')
-                x = (math.exp(self.Q[m+1] / self.lamda)) / sum_Q_lamda
-                self.avg_policy.append(x)
-                sum_policy = sum_policy+x
-            else:
-                self.avg_policy.append(0)
-            #print("sum_policy of",i+M,":",sum_policy)
-        self.avg_policy[0] = 1-sum_policy
-
-        sum_thisAve = sum(self.avg_policy)
-        for a in range(self.M+1):
-            # 平均策略归一化处理
-            self.avg_policy[a] = self.avg_policy[a]/sum_thisAve
+        for m in range(self.M + 1):
+            if m in self.off_real_space:
+                self.avg_policy[m] += 1 / self.game_history[m] * \
+                    (self.policy[m] - self.avg_policy[m])
 
     def update_policy(self, offload_decision, total_delay):
-        # print(math.exp(device_Q_value[i][0]/lamda[i]))'
-        # sum_Q_lamda[i]=0
-        # sum_Q_lamda[i]=math.exp(device_Q_value[i][0]/lamda[i])
-        # sum_policy = 0.0
-        # device_policy[i].clear()
-        # device_policy[i].append(0)
 
         # 更新Q值
-        if offload_decision == 0:
-            # device_Q_value[i][0]=(1-lamda[i])*device_Q_value[i][0]+lamda[i]*(1/total_latency[i])#(-total_latency[i])
-            self.Q[0] = (
-                (self.game_history[0]-1)*self.Q[0]+(1 / total_delay)) / self.game_history[0]
-        else:
-            # device_Q_value[i][Off_decision[i]+1]=(1-lamda[i])*device_Q_value[i][Off_decision[i]+1]+lamda[i]*(1/total_latency[i])#(-total_latency[i])
-            self.Q[offload_decision] = ((self.game_history[offload_decision]-1) * self.Q[offload_decision]+(
-                1 / total_delay)) / self.game_history[offload_decision]
+        self.Q[offload_decision] = (1-self.theta) * self.Q[offload_decision] + self.theta * (1 / total_delay)
 
         # 计算平均策略期望值
         def func(x, y): return x*y
@@ -141,45 +101,21 @@ class WoLFPHC(DeviceAgent):
             # 用大参数s_delta_lose
             self.s_delta = self.s_delta_loss
 
-        # ---------先计算更新策略用的delta值------
-        # 找到Q值最大的动作的索引，
         Q_rank = np.argsort(-np.array(self.Q))
-        # print('device_Q_value[',i,']',device_Q_value[i],'Q_rank',Q_rank)
-        # 更新当前策略---------5-19---进行了修改（概率值归一化处理）
-        # sum_now = 0
-        for num in range(self.M+1):
-            delta = 0
-            if len(self.access_aps) == 0:
-                break
+        max_delta = 0
+        for num in range(self.M + 1):
             if num == 0 or num-1 in self.access_aps:
                 if num == Q_rank[0]:
-                    # print('选到Q大的动作了')
-                    '''sum_delta=0
-                    for a in range(M+1):
-                        if a!=num and len(devices[i][5])!=0:
-                            sum_delta+=min(device_policy[i][a],s_delta[i]/( len(devices[i][5])+1 -1))
-                    delta=sum_delta'''
-                    delta = min(
-                        self.policy[num], self.s_delta)  # /( len(devices[i][5])+1 -1))#sum_delta
+                    max_num = num
                 else:
-                    if len(self.access_aps) != 0:
-                        # /( len(devices[i][5])+1 -1))
-                        delta = -min(self.policy[num], self.s_delta)
-            #print('delta of N=',i,'action=',num,':',delta)
-            self.policy[num] = self.policy[num]+delta
-        # 概率归一化
-        sum_thisCurrent = sum(self.policy)
-        sum_change = 0
-        for a in range(self.M+1):
-            if len(self.access_aps) != 0:
-                if a != self.access_aps[-1]+1:
-                    self.policy[a] = self.policy[a] / \
-                        sum_thisCurrent
-                    sum_change += self.policy[a]
-                else:
-                    self.policy[a] = max(1-sum_change, 0)
-            else:
-                break
+                    delta = - \
+                        min(self.policy[num], self.s_delta /
+                            (len(self.off_real_space)-1))
+                    max_delta -= delta
+                    self.policy[num] = self.policy[num] + delta
+        self.policy[max_num] += max_delta
+        self.policy_history.append(self.policy)
+        # print(self.policy)
 
 
 class QLearningAgent(DeviceAgent):
@@ -190,29 +126,25 @@ class QLearningAgent(DeviceAgent):
         self.theta = theta    # Equ 13 0.1
         self.mode = mode    # 'greedy' or 'mix'
         self.epsilon = 1
-        self.decay = 0.99
+        self.decay = 0.95
         self.epsilon_min = 0.01
         self.first = True
 
     def update_policy(self, offload_decision, total_latency):
         # print(math.exp(device_Q_value[i][0]/lamda[i]))'
+        self.Q[offload_decision] = (1-self.theta)*self.Q[offload_decision]+self.theta*(1/total_latency)
         sum_Q_lamda = 0
-        sum_policy = 0.0
         self.policy.clear()
         # self.policy.append(0)
         for m in range(self.M+1):
             # print(math.exp(device_Q_value[i][m+1]/lamda[i]))
-            sum_Q_lamda += math.exp(self.Q[m]/self.lamda)
+            if m == 0 or m-1 in self.access_aps:
+                sum_Q_lamda += math.exp(self.Q[m]/self.lamda)
         # print("sum_Q_lamda[",i+M,"]",sum_Q_lamda[i])
         for m in range(self.M + 1):
-            if m==0 or m-1 in self.access_aps:
-                x = (
-                    math.exp(self.Q[m]/self.lamda))/sum_Q_lamda
+            if m == 0 or m-1 in self.access_aps:
+                x = (math.exp(self.Q[m]/self.lamda))/sum_Q_lamda
                 self.policy.append(x)
-                sum_policy = sum_policy+x
-                if offload_decision == m:
-                    self.Q[m] = (
-                        1-self.theta)*self.Q[m]+self.theta*(1/total_latency)
             else:
                 self.policy.append(0)
 
@@ -228,16 +160,13 @@ class QLearningAgent(DeviceAgent):
             #     self.first = False
             # else:
             #     off_decision = np.argmax(self.Q)
-            # if random.random() < self.epsilon:
-            #     off_decision = random.choice(self.off_real_space)
-            if self.first:
+            if random.random() < self.epsilon:
                 off_decision = random.choice(self.off_real_space)
-                self.first=False
             else:
                 off_decision = np.argmax(self.Q)
                 if off_decision not in self.off_real_space:
                     raise IndexError
-            # self.epsilon = max(self.epsilon * self.decay, self.epsilon_min)
+            self.epsilon = max(self.epsilon * self.decay, self.epsilon_min)
             self.off_decision = off_decision
         else:
             raise ImportError
@@ -274,7 +203,7 @@ class DispatchAgent(object):
 
     def get_tasks_input_cpu_ratio_rank(self):
         tasks_input_cpu_ratio = [0 for _ in range(self.M)]
-        for m in range(self.M):  # 计算并降序排序\sum(CPUcyccles)/\sum(inputsiza)
+        for m in range(self.M):  # 计算并排序\sum(CPUcyccles)/\sum(inputsiza)
             if sum(self.env.aps[m].tasks_input_in_ap) > 0:
                 tasks_input_cpu_ratio[m] = (
                     sum(self.env.aps[m].tasks_input_in_ap) / self.env.aps[m].total_f)  # sum(tasks_input_in_AP[m])
@@ -312,7 +241,7 @@ class DispatchAgent(object):
                 # task_cpu_in_AP_copy=copy.deepcopy(tasks_cpu_in_AP[m])
                 # task_cpu_in_AP_copy是降序排序的原列表从大到小的索引
                 task_cpu_in_ap_rank = np.argsort(
-                    -np.array(ap.tasks_cpu_in_ap))
+                    np.array(ap.tasks_cpu_in_ap))
                 # print(task_cpu_in_AP_copy)
 
                 # devices_dispatched_compare_copy=copy.deepcopy(devices_dispatched)

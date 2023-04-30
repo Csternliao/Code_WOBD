@@ -2,9 +2,7 @@ from model import *
 from method import *
 from config import *
 
-import random
 from tqdm import tqdm
-
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -65,7 +63,6 @@ def train(env, method_name, config):
     # --------- 训练过程 ---------- #
     avg_total_delay_list = []
     sum_total_delay_list = []
-    result = 999
     conver_epoch = 0
     pbar = tqdm(range(config['max_epoches']))
     for epoch in pbar:
@@ -113,23 +110,26 @@ def train(env, method_name, config):
             devices_dispatched=devices_dispatched)
 
         for device in env.devices:
-            sum_diff = 0
-            if method_name == 'WoLF' or method_name == 'DO':
-                device.agent.update_avg_policy()
+            # if method_name == 'WoLF' or method_name == 'DO':
+            #     old_policy = copy.deepcopy(device.agent.avg_policy)
             offload_decision = offload_decisions[device.id]
             dis_decision = dispatch_decision[device.id]
             trans_delay, dispatch_delay, process_delay, total_delay = env.compute_delay(
                 device=device, off_decision=offload_decision, dispatch_decision=dis_decision, dispatch_time=dispatch_time)
             if method_name != 'RO':
-                old_policy = copy.deepcopy(device.agent.policy)
                 device.update_delay(trans_delay, dispatch_delay, process_delay)
                 device.agent.update_policy(offload_decision, total_delay)
-                for p in range(env.M+1):
-                    sum_diff += abs(device.agent.policy[p]-old_policy[p])
-                if sum_diff < config['conver_diff']:
-                    con_flag = True and con_flag
-                else:
-                    con_flag = False
+                if method_name == 'WoLF' or method_name == 'DO':
+                    device.agent.update_avg_policy()
+                
+                # for p in range(env.M+1):
+                #     sum_diff += abs(
+                #         device.agent.policy[p]-old_policy[p])
+                #     if sum_diff < config['conver_diff']:
+                #         con_flag = True and con_flag
+                #     else:
+                #         con_flag = False
+
             sum_total_delay += total_delay
             # if device.id == 30:
             #     # print(device.agent.Q)
@@ -146,16 +146,21 @@ def train(env, method_name, config):
                          avg_total_delay=avg_total_delay)
 
         if method_name != 'RO':
-            # print("epoch %d: avg_total_delay: %.4f, sum_total_delay: %.4f" %
-            # (epoch, avg_total_delay, sum_total_delay))
-            # if sum_total_delay < result:
-            #     result = sum_total_delay
-            if con_flag:
-                conver_epoch += 1
-            else:
-                conver_epoch = 0
-            if conver_epoch == config['conver_epoch']:
-                break
+            # if con_flag:
+            #     conver_epoch += 1
+            # else:
+            #     conver_epoch = 0
+            # if conver_epoch == config['conver_epoch']:
+            #     break
+            if epoch > config['conver_epoch']:
+                for av in avg_total_delay_list[-config['conver_epoch']-1: -1]:
+                    if abs(av-avg_total_delay) <= config['conver_diff']:
+                        con_flag = True and con_flag
+                    else:
+                        con_flag = False
+                if con_flag:
+                    break
+        
 
         for ap in env.aps:
             ap.reset()

@@ -3,7 +3,6 @@
 """
 
 import math
-import copy
 
 import networkx as nx
 
@@ -113,6 +112,20 @@ class Env(object):
             device.access_aps = device.access_aps[:NUM_ACCESS_APS]
             device.access_aps.sort(key=lambda x: x[0])
             device.access_aps = [d[:2] for d in device.access_aps]
+            # for ap in self.aps:
+            #     if device.group == ap.group:
+            #         access_aps_id.append(ap.id)
+            # access_aps_id = np.random.choice(access_aps_id, NUM_ACCESS_APS, replace=False)
+            # for ap_id in access_aps_id:
+            #     ap = self.aps[ap_id]
+            #     d_im = math.sqrt(
+            #         (device.loc[0]-ap.loc[0])**2+(device.loc[1]-ap.loc[1])**2)
+            #     trans_rate = ap.total_b * math.log(
+            #         1 + (device.f_p * d_im ** (-self.path_loss)) / self.noise)  # transmit rate
+            #     device.access_aps.append([ap.id, trans_rate])
+            # device.access_aps.sort(key=lambda x: x[0])
+            
+            
 
     def update_ap_offload_info(self, ap_id, device_id):
         self.aps[ap_id].devices_in_ap.append(
