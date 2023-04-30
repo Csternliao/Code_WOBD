@@ -78,16 +78,12 @@ def get_all_env():
 
 
 def set_env(config, all_env):
-    num_ap_of_group1 = config['num_ap_of_group1'] if 'num_ap_of_group1' in config.keys(
-    ) else NUM_AP_OF_GROUP1
-    num_ap_of_group2 = config['num_ap_of_group2'] if 'num_ap_of_group2' in config.keys(
-    ) else NUM_AP_OF_GROUP2
-    num_md_of_group1 = config['num_md_of_group1'] if 'num_md_of_group1' in config.keys(
-    ) else NUM_MD_OF_GROUP1
-    num_md_of_group2 = config['num_md_of_group2'] if 'num_md_of_group2' in config.keys(
-    ) else NUM_MD_OF_GROUP2
     m = config['M'] if 'M' in config.keys() else M
     n = config['N'] if 'N' in config.keys() else N
+    num_ap_of_group1 = m / 2
+    num_ap_of_group2 = m / 2
+    num_md_of_group1 = n * MD_GROUP_RATIO[0] / sum(MD_GROUP_RATIO)
+    num_md_of_group2 = n * MD_GROUP_RATIO[1] / sum(MD_GROUP_RATIO)
 
     all_devices = all_env['all_devices']
     all_aps = all_env['all_aps']
@@ -159,7 +155,7 @@ def get_balance_result(ex_config, all_env):
     plt.show()
 
 
-def get_delay_ap_result(ex_config):
+def get_delay_ap_result(ex_config, all_env):
     results = [[] for _ in range(len(ex_config['methods']))]
     for m in ex_config['M']:
         print('Num of APs:%d' % m)
@@ -167,7 +163,6 @@ def get_delay_ap_result(ex_config):
             'M': m,
             'num_ap_of_group1': m/2
         }
-        all_env = get_all_env()
         env = set_env(env_config, all_env)
         for idx, method_name in enumerate(ex_config['methods']):
             e = copy.deepcopy(env)
@@ -202,10 +197,11 @@ def draw_delay_ap_result(ex_config, data=None):
 if __name__ == "__main__":
     ex_name = EX_NAME
     ex_config = EX_CONFIG[ex_name]
+    all_env = get_all_env()
     print('ex_name', ex_name)
     print('ex_config', ex_config)
     if ex_name == 'balance':
         get_balance_result(ex_config)
     if ex_name == 'delay_ap':
         # draw_delay_ap_result(ex_config, file_name='./data/delay_ap_result.txt')
-        get_delay_ap_result(ex_config)
+        get_delay_ap_result(ex_config, all_env)
