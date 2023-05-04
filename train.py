@@ -140,8 +140,8 @@ def train(env, method_name, config):
         avg_total_delay = sum_total_delay / env.N
         avg_total_delay_list.append(avg_total_delay)
         sum_total_delay_list.append(sum_total_delay)
-        pbar.set_description("%s | Num_of_AP %d | Epoch %d" %
-                             (method_name, env.M, epoch))
+        pbar.set_description("%s | Num_of_AP %d | Num_of_MD %d | Epoch %d" %
+                             (method_name, env.M, env.N, epoch))
         pbar.set_postfix(sum_total_delay=sum_total_delay,
                          avg_total_delay=avg_total_delay)
 
@@ -167,11 +167,13 @@ def train(env, method_name, config):
     # --------- 训练过程 ---------- #
 
     if method_name == 'RO':
-        result = np.average(sum_total_delay_list)
-        print('RO 结果: %.4f' % (np.average(sum_total_delay_list)))
-        return result
-    result = np.average(sum_total_delay_list[-config['conver_epoch']:])
-    print('%s 结果: %.4f' % (method_name, result))
+        sum_result = np.average(sum_total_delay_list)
+        avg_result = np.average(avg_total_delay_list)
+        print('RO 结果: 总时延: %.4f, 平均时延: %.4f' % (sum_result, avg_result))
+        return sum_result, avg_result
+    sum_result = np.average(sum_total_delay_list[-config['conver_epoch']:])
+    avg_result = np.average(avg_total_delay_list[-config['conver_epoch']:])
+    print('%s 结果: 总时延: %.4f, 平均时延: %.4f' % (method_name, sum_result, avg_result))
 
     # if epoch != max_epoches-1:
     #     result = np.average(sum_total_delay_list[-10:])
@@ -180,7 +182,7 @@ def train(env, method_name, config):
     #     result = np.average(sum_total_delay_list[-10:])
     #     print('%s 结果: %.4f' % (method_name, np.average(sum_total_delay_list[-10:])))
 
-    return result
+    return sum_result, avg_result
 
     # ---------- 作图 ------------- #
     # print(sum_total_delay_list)

@@ -138,7 +138,7 @@ class Env(object):
     def get_path_between_aps(self):
         # shortest_path
         path_between_aps = [[[] for _ in range(self.M)] for _ in range(self.M)]
-        G = nx.from_numpy_matrix(np.array(self.ap_matrix))
+        G = nx.from_numpy_array(np.array(self.ap_matrix))
         for m in range(self.M):
             for n in range(self.M):
                 path_between_aps[m][n] = nx.shortest_path(

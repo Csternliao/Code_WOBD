@@ -7,17 +7,17 @@ CONVER_DIFF = 0.05
 CONVER_EPOCH = 10
 
 # 环境参数
-SEED = 666
-N = 20  # 设备数 10的倍数
-M = 4  # AP数
-MD_GROUP_RATIO = [6, 4]
+SEED = 0
+N = 40  # 设备数 10的倍数
+M = 8  # AP数
+MD_GROUP_RATIO = [3, 2]
 # 下面两者相加应等于M
 NUM_AP_OF_GROUP1 = M / 2
 NUM_AP_OF_GROUP2 = M / 2
 # 下面两者相加应等于N
 NUM_MD_OF_GROUP1 = N * MD_GROUP_RATIO[0] / sum(MD_GROUP_RATIO)
 NUM_MD_OF_GROUP2 = N * MD_GROUP_RATIO[1] / sum(MD_GROUP_RATIO)
-MAX_EPOCHES = 500   # 最大迭代数
+MAX_EPOCHES = 300   # 最大迭代数
 
 # 环境参数
 WIDTH = 1  # 整片区域的长与宽，1km*1km
@@ -35,8 +35,8 @@ F_P_MAX = 0.15
 NUM_ACCESS_APS = 2
 
 # AP参数
-GROUP1_F = 60
-GROUP2_F = 40
+GROUP1_F = 40
+GROUP2_F = 60
 B_MIN = 5
 B_MAX = 40
 
@@ -56,7 +56,7 @@ MAX_APS = 12
 # delay_ap  时延与AP数量关系
 # delay_md  时延与MD数量关系
 # conver    收敛性实验
-EX_NAME = 'delay_ap'
+EX_NAME = 'balance'
 
 METHOD_CONFIG = {
     'lamda': LAMDA,
@@ -73,10 +73,10 @@ EX_CONFIG = {
         'methods': ['WoLF', 'Q-value', 'GO', 'DO', 'RO'],
         'method_config': METHOD_CONFIG,
         'colors': ['b', 'orange', 'g', 'r', 'm'],
-        'linestyles': ['-', '.', '--', '-.', '-'],
+        'linestyles': ['-', ':', '--', '-.', '-'],
         'markers': ['o', '^', 'P', '*', 's'],
-        'num_md_of_group': [[25, 15], [18, 22], [13, 27], [11, 29], [10, 30]],
-        'x': [1.00, 2.04, 3.46, 4.39, 5.00]
+        'num_md_of_group': [[16, 24], [23, 17], [27, 13], [29, 11], [30, 10]],
+        'x': [1.00, 2.03, 3.12, 3.95, 4.50]
     },
     'delay_ap': {
         'methods': ['WoLF', 'Q-value', 'GO', 'DO', 'RO'],
@@ -87,7 +87,12 @@ EX_CONFIG = {
         'M': [4, 6, 8, 10, 12],
     },
     'delay_md': {
-
+        'methods': ['WoLF', 'Q-value', 'GO', 'DO', 'RO'],
+        'method_config': METHOD_CONFIG,
+        'colors': ['b', 'orange', 'g', 'r', 'm'],
+        'linestyles': ['-', ':', '--', '-.', '-'],
+        'markers': ['o', '^', 'P', '*', 's'],
+        'N': [20, 30, 40, 50, 60],
     },
     'conver': {
 
