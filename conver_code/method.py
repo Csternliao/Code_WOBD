@@ -3,8 +3,12 @@ import math
 
 import numpy as np
 import random
+from config import *
 
 # Parent Class(Device)
+
+random.seed(SEED)
+np.random.seed(SEED)
 
 
 class DeviceAgent(object):
@@ -16,8 +20,7 @@ class DeviceAgent(object):
         self.off_decision_space, self.off_real_space = self.get_off_space()
         self.off_decision = 0
         self.policy_history = [self.policy]
-        self.window_size = 5
-        self.threshold = 0.01
+        
 
     def get_init_policy(self):
         num_access_aps = len(self.access_aps)
@@ -69,10 +72,11 @@ class DeviceAgent(object):
 # WoLFPHC: Subclass of DeviceAgent
 class WoLFPHC(DeviceAgent):
 
-    def __init__(self, M, access_aps, theta, s_delta_win, s_delta_loss):
+    def __init__(self, M, access_aps, theta, lamda, s_delta_win, s_delta_loss):
         super().__init__(M, access_aps)
         self.Q = [0 for _ in range(self.M+1)]
         self.theta = theta    # Equ 13 0.1
+        self.lamda = lamda
         self.s_delta = 0
         self.s_delta_win, self.s_delta_loss = s_delta_win, s_delta_loss
 
@@ -82,6 +86,9 @@ class WoLFPHC(DeviceAgent):
         self.game_history = [1 for _ in range(self.M+1)]
 
         self.avg_policy = copy.deepcopy(self.policy)
+
+        self.window_size = 3
+        self.threshold = 0.05
 
     def take_action(self):
         off_decision = np.random.choice(
@@ -93,12 +100,27 @@ class WoLFPHC(DeviceAgent):
         return off_decision
 
     def update_avg_policy(self):
+        sum_Q_lamda = 0
+        self.avg_policy.clear()
+        # self.policy.append(0)
+        for m in range(self.M+1):
+            # print(math.exp(device_Q_value[i][m+1]/lamda[i]))
+            if m == 0 or m-1 in self.access_aps:
+                sum_Q_lamda += math.exp(self.Q[m]/self.lamda)
+        # print("sum_Q_lamda[",i+M,"]",sum_Q_lamda[i])
         for m in range(self.M + 1):
-            if m in self.off_real_space:
-                self.avg_policy[m] += 1 / (self.game_history[m]) * \
-                    (self.policy[m] - self.avg_policy[m])
-        sum_avg = sum(self.avg_policy)
-        self.avg_policy = [avg_p/sum_avg for avg_p in self.avg_policy]
+            if m == 0 or m-1 in self.access_aps:
+                x = (math.exp(self.Q[m]/self.lamda))/sum_Q_lamda
+                self.avg_policy.append(x)
+            else:
+                self.avg_policy.append(0)
+        
+        # for m in range(self.M + 1):
+        #     if m in self.off_real_space:
+        #         self.avg_policy[m] += 1 / (self.game_history[m]) * \
+        #             (self.policy[m] - self.avg_policy[m])
+        # sum_avg = sum(self.avg_policy)
+        # self.avg_policy = [avg_p/sum_avg for avg_p in self.avg_policy]
 
     def update_policy(self, offload_decision, total_delay):
 
@@ -154,6 +176,9 @@ class QLearningAgent(DeviceAgent):
         self.epsilon_min = 0.01
         self.first = True
 
+        self.window_size = 3
+        self.threshold = 0.05
+
     def update_policy(self, offload_decision, total_latency):
         # print(math.exp(device_Q_value[i][0]/lamda[i]))'
         self.Q[offload_decision] = (
@@ -172,6 +197,7 @@ class QLearningAgent(DeviceAgent):
                 self.policy.append(x)
             else:
                 self.policy.append(0)
+
         policy = copy.deepcopy(self.policy)
         self.policy_history.append(policy)
 

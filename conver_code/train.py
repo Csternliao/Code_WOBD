@@ -4,49 +4,17 @@ from config import *
 
 from tqdm import tqdm
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 def set_agent(env, method_name, config):
     # --------- 方法配置 ---------- #
-    if method_name == 'WOBD':
+    if method_name == 'WoLF':  # 收敛性实验
         for device in env.devices:
-            agent = WoLFPHC(env.M, device.access_aps, theta=config['theta'],
-                            s_delta_win=config['s_delta_win'], s_delta_loss=config['s_delta_loss'])
-            device.link_agent(agent)
-        dispatch_agent = DispatchAgent(M=env.M, env=env, is_dispatch=True)
-    elif method_name == 'QOBD':
-        for device in env.devices:
-            agent = QLearningAgent(env.M, device.access_aps, lamda=config['lamda'], theta=config['theta'],
-                                   mode='mix')
-            device.link_agent(agent)
-        dispatch_agent = DispatchAgent(M=env.M, env=env, is_dispatch=True)
-    elif method_name == 'DO':
-        for device in env.devices:
-            agent = WoLFPHC(env.M, device.access_aps, theta=config['theta'],
-                            s_delta_win=config['s_delta_win'], s_delta_loss=config['s_delta_loss'])
-            # agent = QLearningAgent(env.M, device.access_aps, lamda=config['lamda'], theta=config['theta'],
-            #                        mode='mix')
-            device.link_agent(agent)
-        dispatch_agent = DispatchAgent(M=env.M, env=env, is_dispatch=False)
-    elif method_name == 'RO':
-        for device in env.devices:
-            agent = DeviceAgent(env.M, device.access_aps)
-            device.link_agent(agent)
-        dispatch_agent = DispatchAgent(M=env.M, env=env, is_dispatch=False)
-    elif method_name == 'GO':
-        for device in env.devices:
-            agent = QLearningAgent(env.M, device.access_aps, lamda=config['lamda'], theta=config['theta'],
-                                   mode='mix')
-            device.link_agent(agent)
-        dispatch_agent = DispatchAgent(M=env.M, env=env, is_dispatch=False)
-    elif method_name == 'WoLF_Con':  # 收敛性实验
-        for device in env.devices:
-            agent = WoLFPHC(env.M, device.access_aps, lamda=config['lamda'], theta=config['theta'],
+            agent = WoLFPHC(env.M, device.access_aps, theta=config['theta'], lamda=config['lamda'],
                             s_delta_win=config['s_delta_win'], s_delta_loss=config['s_delta_loss'])
             device.link_agent(agent)
         dispatch_agent = DispatchAgent(M=env.M, env=env, is_dispatch=False)
-    elif method_name == 'Q_Con':
+    elif method_name == 'Q-value':
         for device in env.devices:
             agent = QLearningAgent(env.M, device.access_aps, lamda=config['lamda'], theta=config['theta'],
                                    mode='mix')
@@ -58,13 +26,13 @@ def set_agent(env, method_name, config):
     return dispatch_agent
 
 
-def train(env, method_name, config):
+def train(env, method_name, config, conver=True):
     dispatch_agent = set_agent(env, method_name, config)
     # --------- 训练过程 ---------- #
     avg_total_delay_list = []
     sum_total_delay_list = []
-    conver_epoch = 0
     pbar = tqdm(range(config['max_epoches']))
+    conver_epoch = 0
     for epoch in pbar:
         con_flag = True    # 收敛标志用
         sum_total_delay = 0
@@ -110,8 +78,8 @@ def train(env, method_name, config):
             devices_dispatched=devices_dispatched)
 
         for device in env.devices:
-            # if method_name == 'WoLF' or method_name == 'DO':
-            #     old_policy = copy.deepcopy(device.agent.avg_policy)
+            sum_diff = 0
+            old_policy = copy.deepcopy(device.agent.policy)
             offload_decision = offload_decisions[device.id]
             dis_decision = dispatch_decision[device.id]
             trans_delay, dispatch_delay, process_delay, total_delay = env.compute_delay(
@@ -123,14 +91,14 @@ def train(env, method_name, config):
                     device.agent.update_avg_policy()
 
                 # con_flag = device.agent.is_converged() and con_flag
-                
-                # for p in range(env.M+1):
-                #     sum_diff += abs(
-                #         device.agent.policy[p]-old_policy[p])
-                #     if sum_diff < config['conver_diff']:
-                #         con_flag = True and con_flag
-                #     else:
-                #         con_flag = False
+
+                for p in range(env.M+1):
+                    sum_diff += abs(
+                        device.agent.policy[p]-old_policy[p])
+                    if sum_diff < config['conver_diff']:
+                        con_flag = True and con_flag
+                    else:
+                        con_flag = False
 
             sum_total_delay += total_delay
             # if device.id == 30:
@@ -148,23 +116,24 @@ def train(env, method_name, config):
                          avg_total_delay=avg_total_delay)
 
         if method_name != 'RO':
-            # if con_flag:
-            #     conver_epoch += 1
-            # else:
-            #     conver_epoch = 0
-            # if conver_epoch == config['conver_epoch']:
+            if con_flag:
+                conver_epoch += 1
+            else:
+                conver_epoch = 0
+            if conver_epoch == config['conver_epoch'] and conver:
+                break
+
+            # if epoch > config['conver_epoch'] and conver:
+            #     for av in avg_total_delay_list[-config['conver_epoch']-1: -1]:
+            #         if abs(av-avg_total_delay) <= config['conver_diff']:
+            #             con_flag = True and con_flag
+            #         else:
+            #             con_flag = False
+            #     if con_flag:
+            #         break
+
+            # if con_flag and conver:
             #     break
-            if epoch > config['conver_epoch']:
-                for av in avg_total_delay_list[-config['conver_epoch']-1: -1]:
-                    if abs(av-avg_total_delay) <= config['conver_diff']:
-                        con_flag = True and con_flag
-                    else:
-                        con_flag = False
-                if con_flag:
-                    break
-            # if con_flag:
-            #     break
-        
 
         for ap in env.aps:
             ap.reset()
@@ -177,7 +146,8 @@ def train(env, method_name, config):
         return sum_result, avg_result
     sum_result = np.average(sum_total_delay_list[-config['conver_epoch']:])
     avg_result = np.average(avg_total_delay_list[-config['conver_epoch']:])
-    print('%s 结果: 总时延: %.4f, 平均时延: %.4f' % (method_name, sum_result, avg_result))
+    print('%s 结果: 总时延: %.4f, 平均时延: %.4f' %
+          (method_name, sum_result, avg_result))
 
     # if epoch != max_epoches-1:
     #     result = np.average(sum_total_delay_list[-10:])
@@ -186,7 +156,7 @@ def train(env, method_name, config):
     #     result = np.average(sum_total_delay_list[-10:])
     #     print('%s 结果: %.4f' % (method_name, np.average(sum_total_delay_list[-10:])))
 
-    return sum_result, avg_result
+    return sum_total_delay_list, epoch
 
     # ---------- 作图 ------------- #
     # print(sum_total_delay_list)

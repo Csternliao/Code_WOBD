@@ -2,8 +2,8 @@
 LAMDA = 0.1
 THETA = 0.1
 S_DELTA_WIN = 0.01
-S_DELTA_LOSS = 0.05
-CONVER_DIFF = 0.05
+S_DELTA_LOSS = 0.02
+CONVER_DIFF = 0.01
 CONVER_EPOCH = 10
 
 # 环境参数
@@ -17,7 +17,7 @@ NUM_AP_OF_GROUP2 = M / 2
 # 下面两者相加应等于N
 NUM_MD_OF_GROUP1 = N * MD_GROUP_RATIO[0] / sum(MD_GROUP_RATIO)
 NUM_MD_OF_GROUP2 = N * MD_GROUP_RATIO[1] / sum(MD_GROUP_RATIO)
-MAX_EPOCHES = 300   # 最大迭代数
+MAX_EPOCHES = 200   # 最大迭代数
 
 # 环境参数
 WIDTH = 1  # 整片区域的长与宽，1km*1km
@@ -56,7 +56,7 @@ MAX_APS = 12
 # delay_ap  时延与AP数量关系
 # delay_md  时延与MD数量关系
 # conver    收敛性实验
-EX_NAME = 'balance'
+EX_NAME = 'delay_ap'
 
 METHOD_CONFIG = {
     'lamda': LAMDA,
@@ -70,7 +70,7 @@ METHOD_CONFIG = {
 
 EX_CONFIG = {
     'balance': {
-        'methods': ['WoLF', 'Q-value', 'GO', 'DO', 'RO'],
+        'methods': ['WOBD', 'QOBD', 'GO', 'DO', 'RO'],
         'method_config': METHOD_CONFIG,
         'colors': ['b', 'orange', 'g', 'r', 'm'],
         'linestyles': ['-', ':', '--', '-.', '-'],
@@ -79,7 +79,7 @@ EX_CONFIG = {
         'x': [1.00, 2.03, 3.12, 3.95, 4.50]
     },
     'delay_ap': {
-        'methods': ['WoLF', 'Q-value', 'GO', 'DO', 'RO'],
+        'methods': ['WOBD', 'QOBD', 'GO', 'DO', 'RO'],
         'method_config': METHOD_CONFIG,
         'colors': ['b', 'orange', 'g', 'r', 'm'],
         'linestyles': ['-', ':', '--', '-.', '-'],
@@ -87,7 +87,7 @@ EX_CONFIG = {
         'M': [4, 6, 8, 10, 12],
     },
     'delay_md': {
-        'methods': ['WoLF', 'Q-value', 'GO', 'DO', 'RO'],
+        'methods': ['WOBD', 'QOBD', 'GO', 'DO', 'RO'],
         'method_config': METHOD_CONFIG,
         'colors': ['b', 'orange', 'g', 'r', 'm'],
         'linestyles': ['-', ':', '--', '-.', '-'],

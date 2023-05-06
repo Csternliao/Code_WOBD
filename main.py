@@ -7,6 +7,7 @@ import random
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 
 np.random.seed(SEED)
 random.seed(SEED)
@@ -66,7 +67,7 @@ def get_all_env():
                 wired_width[i][j] = 100 * \
                     random.randint(WIRED_WIDTH_MIN, WIRED_WIDTH_MAX)
             else:
-                wired_width[i][j] = wired_width[i][j]
+                wired_width[i][j] = wired_width[j][i]
 
     return {
         'all_devices': all_devices,
@@ -79,10 +80,14 @@ def get_all_env():
 def set_env(config, all_env):
     m = config['M'] if 'M' in config.keys() else M
     n = config['N'] if 'N' in config.keys() else N
-    num_ap_of_group1 = config['num_ap_of_group1'] if 'num_ap_of_group1' in config.keys() else m / 2
-    num_ap_of_group2 = config['num_ap_of_group2'] if 'num_ap_of_group2' in config.keys() else m / 2
-    num_md_of_group1 = config['num_md_of_group1'] if 'num_md_of_group1' in config.keys() else n * MD_GROUP_RATIO[0] / sum(MD_GROUP_RATIO)
-    num_md_of_group2 = config['num_md_of_group2'] if 'num_md_of_group2' in config.keys() else n * MD_GROUP_RATIO[1] / sum(MD_GROUP_RATIO)
+    num_ap_of_group1 = config['num_ap_of_group1'] if 'num_ap_of_group1' in config.keys(
+    ) else m / 2
+    num_ap_of_group2 = config['num_ap_of_group2'] if 'num_ap_of_group2' in config.keys(
+    ) else m / 2
+    num_md_of_group1 = config['num_md_of_group1'] if 'num_md_of_group1' in config.keys(
+    ) else n * MD_GROUP_RATIO[0] / sum(MD_GROUP_RATIO)
+    num_md_of_group2 = config['num_md_of_group2'] if 'num_md_of_group2' in config.keys(
+    ) else n * MD_GROUP_RATIO[1] / sum(MD_GROUP_RATIO)
 
     all_devices = all_env['all_devices']
     all_aps = all_env['all_aps']
@@ -140,7 +145,8 @@ def get_balance_result(ex_config, all_env):
         env = set_env(env_config, all_env)
         for idx, method_name in enumerate(ex_config['methods']):
             e = copy.deepcopy(env)
-            sum_result, avg_result = train(e, method_name, config=ex_config['method_config'])
+            sum_result, avg_result = train(
+                e, method_name, config=ex_config['method_config'])
             results[idx].append(sum_result)
             avg_results[idx].append(avg_result)
     with open('./data/balance_result.txt', mode='w') as f:
@@ -153,17 +159,11 @@ def get_balance_result(ex_config, all_env):
             for j in range(len(avg_results[i])):
                 f.write('%.4f\t' % avg_results[i][j])
             f.write('\n')
-    draw_balance_result(
-        data=results, ex_config=ex_config)
-    # [TODO]标签待确认
-    plt.xlabel('Unit Task Resource Ratio')
-    plt.ylabel('Total delay')
-    plt.legend()
-    plt.savefig('./figs/balance_result.png', dpi=500)
-    plt.show()
+    # draw_balance_result(
+    #     data=results, ex_config=ex_config)
 
 
-def draw_balance_result(ex_config, data=None, file_name=None):
+def draw_balance_result(ex_config, data=None, file_name=None, avg=False):
     if not data and file_name:
         data = []
         with open(file=file_name, mode='r') as f:
@@ -173,16 +173,27 @@ def draw_balance_result(ex_config, data=None, file_name=None):
         pass
     else:
         raise ImportError
-    for idx in range(len(data)):
-        plt.plot(ex_config['x'], data[idx], color=ex_config['colors'][idx],
-                 marker=ex_config['markers'][idx], linestyle=ex_config['linestyles'][idx], label=ex_config['methods'][idx])
-    # [TODO]标签待确认
-    plt.xlabel('Resource imbalance')
-    plt.ylabel('Total delay')
-    plt.grid(ls=':', color='gray')  # 设置网格
-    plt.legend()
-    plt.savefig('./figs/balance_result.png', dpi=500)
-    plt.show()
+    
+    if avg:
+        ylabel = 'Average delay (s)'
+    else:
+        ylabel = 'Total delay (s)'
+
+    with PdfPages(file_name.replace('data', 'figs').replace('.txt', '.pdf')) as pdf:
+        for idx in range(len(data)):
+            plt.plot(ex_config['x'], data[idx], color=ex_config['colors'][idx],
+                     marker=ex_config['markers'][idx], linestyle=ex_config['linestyles'][idx], label=ex_config['methods'][idx])
+        # [TODO]标签待确认
+        plt.xlabel('Unit Task Resource Ratio', fontsize=14)
+        plt.ylabel(ylabel, fontsize=14)
+        plt.xticks(fontsize=14)
+        plt.yticks(fontsize=14)
+        plt.grid(ls=':', color='gray')  # 设置网格
+        plt.legend(loc='center left', fontsize=14)
+        # plt.savefig('./figs/balance_result.png', dpi=500)
+        pdf.savefig()
+        plt.close()
+        # plt.show()
 
 
 def get_delay_ap_result(ex_config, all_env):
@@ -196,7 +207,8 @@ def get_delay_ap_result(ex_config, all_env):
         env = set_env(env_config, all_env)
         for idx, method_name in enumerate(ex_config['methods']):
             e = copy.deepcopy(env)
-            sum_result, avg_result = train(e, method_name, config=ex_config['method_config'])
+            sum_result, avg_result = train(
+                e, method_name, config=ex_config['method_config'])
             results[idx].append(sum_result)
             avg_results[idx].append(avg_result)
     with open('./data/delay_ap_result.txt', mode='w') as f:
@@ -209,11 +221,11 @@ def get_delay_ap_result(ex_config, all_env):
             for j in range(len(avg_results[i])):
                 f.write('%.4f\t' % avg_results[i][j])
             f.write('\n')
-    draw_delay_ap_result(
-        data=results, ex_config=ex_config)
+    # draw_delay_ap_result(
+    #     data=results, ex_config=ex_config)
 
 
-def draw_delay_ap_result(ex_config, data=None, file_name=None):
+def draw_delay_ap_result(ex_config, data=None, file_name=None, avg=False):
     if not data and file_name:
         data = []
         with open(file=file_name, mode='r') as f:
@@ -223,16 +235,27 @@ def draw_delay_ap_result(ex_config, data=None, file_name=None):
         pass
     else:
         raise ImportError
-    for idx in range(len(data)):
-        plt.plot(ex_config['M'], data[idx], color=ex_config['colors'][idx],
-                 marker=ex_config['markers'][idx], linestyle=ex_config['linestyles'][idx], label=ex_config['methods'][idx])
-    # [TODO]标签待确认
-    plt.xlabel('Number of APs')
-    plt.ylabel('Total delay')
-    plt.grid(ls=':', color='gray')  # 设置网格
-    plt.legend()
-    plt.savefig('./figs/delay_ap_result.png', dpi=500)
-    plt.show()
+    
+    if avg:
+        ylabel = 'Average delay (s)'
+    else:
+        ylabel = 'Total delay (s)'
+
+    with PdfPages(file_name.replace('data', 'figs').replace('.txt', '.pdf')) as pdf:
+        for idx in range(len(data)):
+            plt.plot(ex_config['M'], data[idx], color=ex_config['colors'][idx],
+                     marker=ex_config['markers'][idx], linestyle=ex_config['linestyles'][idx], label=ex_config['methods'][idx])
+        # [TODO]标签待确认
+        plt.xlabel('Number of APs', fontsize=14)
+        plt.ylabel(ylabel, fontsize=14)
+        plt.xticks(fontsize=14)
+        plt.yticks(fontsize=14)
+        plt.grid(ls=':', color='gray')  # 设置网格
+        plt.legend(loc='center right', fontsize=14)
+        # plt.savefig('./figs/delay_ap_result.png', dpi=500)
+        pdf.savefig()
+        plt.close()
+        # plt.show()
 
 
 def get_delay_md_result(ex_config, all_env):
@@ -246,7 +269,8 @@ def get_delay_md_result(ex_config, all_env):
         env = set_env(env_config, all_env)
         for idx, method_name in enumerate(ex_config['methods']):
             e = copy.deepcopy(env)
-            sum_result, avg_result = train(e, method_name, config=ex_config['method_config'])
+            sum_result, avg_result = train(
+                e, method_name, config=ex_config['method_config'])
             results[idx].append(sum_result)
             avg_results[idx].append(avg_result)
     with open('./data/delay_md_result.txt', mode='w') as f:
@@ -259,11 +283,11 @@ def get_delay_md_result(ex_config, all_env):
             for j in range(len(avg_results[i])):
                 f.write('%.4f\t' % avg_results[i][j])
             f.write('\n')
-    draw_delay_md_result(
-        data=results, ex_config=ex_config)
+    # draw_delay_md_result(
+    #     data=results, ex_config=ex_config)
 
 
-def draw_delay_md_result(ex_config, data=None, file_name=None):
+def draw_delay_md_result(ex_config, data=None, file_name=None, avg=False):
     if not data and file_name:
         data = []
         with open(file=file_name, mode='r') as f:
@@ -273,16 +297,29 @@ def draw_delay_md_result(ex_config, data=None, file_name=None):
         pass
     else:
         raise ImportError
-    for idx in range(len(data)):
-        plt.plot(ex_config['N'], data[idx], color=ex_config['colors'][idx],
-                 marker=ex_config['markers'][idx], linestyle=ex_config['linestyles'][idx], label=ex_config['methods'][idx])
-    # [TODO]标签待确认
-    plt.xlabel('Number of MDs')
-    plt.ylabel('Total delay')
-    plt.grid(ls=':', color='gray')  # 设置网格
-    plt.legend()
-    plt.savefig('./figs/delay_md_result.png', dpi=500)
-    plt.show()
+
+    if avg:
+        ylabel = 'Average delay (s)'
+        loc = 'center left'
+    else:
+        ylabel = 'Total delay (s)'
+        loc = 'upper left'
+
+    with PdfPages(file_name.replace('data', 'figs').replace('.txt', '.pdf')) as pdf:
+        for idx in range(len(data)):
+            plt.plot(ex_config['N'], data[idx], color=ex_config['colors'][idx],
+                     marker=ex_config['markers'][idx], linestyle=ex_config['linestyles'][idx], label=ex_config['methods'][idx])
+        # [TODO]标签待确认
+        plt.xlabel('Number of MDs', fontsize=14)
+        plt.ylabel(ylabel, fontsize=14)
+        plt.xticks(fontsize=14)
+        plt.yticks(fontsize=14)
+        plt.grid(ls=':', color='gray')  # 设置网格
+        plt.legend(loc=loc, fontsize=14)
+        # plt.savefig('./figs/delay_md_result.png', dpi=500)
+        pdf.savefig()
+        plt.close()
+    # plt.show()
 
 
 if __name__ == "__main__":
@@ -293,9 +330,13 @@ if __name__ == "__main__":
     print('ex_config', ex_config)
     if ex_name == 'balance':
         get_balance_result(ex_config, all_env)
-        # draw_balance_result(ex_config, file_name='./data/balance_result.txt')
+        draw_balance_result(ex_config, file_name='./data/balance_result.txt', avg=False)
+        draw_balance_result(ex_config, file_name='./data/avg_balance_result.txt', avg=True)
     if ex_name == 'delay_ap':
-        # draw_delay_ap_result(ex_config, file_name='./data/delay_ap_result40.txt')
         get_delay_ap_result(ex_config, all_env)
+        draw_delay_ap_result(ex_config, file_name='./data/delay_ap_result.txt', avg=False)
+        draw_delay_ap_result(ex_config, file_name='./data/avg_delay_ap_result.txt', avg=True)
     if ex_name == 'delay_md':
         get_delay_md_result(ex_config, all_env)
+        draw_delay_md_result(ex_config, file_name='./data/delay_md_result.txt', avg=False)
+        draw_delay_md_result(ex_config, file_name='./data/avg_delay_md_result.txt', avg=True)
